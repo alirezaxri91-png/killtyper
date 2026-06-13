@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Final Sentence - Persian Prototype</title>
+
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    :root{
+      --bg1:#05070d;
+      --bg2:#0a1220;
+      --glass:rgba(255,255,255,0.08);
+      --glass-2:rgba(255,255,255,0.12);
+      --stroke:rgba(255,255,255,0.14);
+      --text:#f3f7ff;
+      --muted:#a8b3c7;
+      --accent:#7c3aed;
+      --accent2:#06b6d4;
+      --danger:#ff4d6d;
+      --ok:#39d98a;
+      --gold:#ffd166;
+      --shadow: 0 20px 80px rgba(0,0,0,.45);
+    }
+
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,body{
+      margin:0;
+      width:100%;
+      height:100%;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at top right, rgba(124,58,237,.18), transparent 25%),
+        radial-gradient(circle at bottom left, rgba(6,182,212,.16), transparent 25%),
+        linear-gradient(135deg,var(--bg1),var(--bg2));
+      color:var(--text);
+      font-family:'Vazir', sans-serif;
+    }
+
+    #bg3d{
+      position:fixed;
+      inset:0;
+      z-index:0;
+    }
+
+    .noise{
+      position:fixed;
+      inset:0;
+      z-index:1;
+      pointer-events:none;
+      opacity:.07;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,.7) 0 1px, transparent 1px),
+        radial-gradient(circle at 80% 60%, rgba(255,255,255,.5) 0 1px, transparent 1px),
+        radial-gradient(circle at 40% 80%, rgba(255,255,255,.35) 0 1px, transparent 1px);
+      background-size: 180px 180px, 240px 240px, 320px 320px;
+      animation: drift 20s linear infinite;
+    }
+
+    @keyframes drift{
+      from{transform:translate3d(0,0,0)}
+      to{transform:translate3d(-40px,20px,0)}
+    }
+
+    #app{
+      position:relative;
+      z-index:2;
+      width:100%;
+      height:100%;
+    }
+
+    .screen{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+    }
+
+    .screen.active{
+      display:flex;
+      animation: fadeIn .45s ease;
+    }
+
+    @keyframes fadeIn{
+      from{opacity:0; transform:scale(.985)}
+      to{opacity:1; transform:scale(1)}
+    }
+
+    .panel{
+      width:min(1100px,100%);
+      border:1px solid var(--stroke);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      border-radius:32px;
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.12);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .panel::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.16), transparent 35%, transparent 65%, rgba(255,255,255,.06));
+      pointer-events:none;
+    }
+
+    .panel-inner{
+      padding:34px;
+      position:relative;
+      z-index:1;
+    }
+
+    .hero-title{
+      font-size: clamp(38px, 7vw, 90px);
+      font-weight:900;
+      line-height:1;
+      letter-spacing:-2px;
+      margin:0 0 14px;
+      text-align:center;
+      text-shadow:
+        0 10px 30px rgba(0,0,0,.45),
+        0 0 28px rgba(124,58,237,.25),
+        0 0 20px rgba(6,182,212,.12);
+    }
+
+    .subtitle{
+      text-align:center;
+      color:var(--muted);
+      font-size:clamp(14px, 2vw, 18px);
+      margin-bottom:26px;
+    }
+
+    .grid{
+      display:grid;
+      gap:18px;
+    }
+
+    .grid-2{
+      grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+
+    .card{
+      border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
+      border-radius:24px;
+      padding:18px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+    }
+
+    .label{
+      display:block;
+      margin-bottom:10px;
+      color:#d7e0ef;
+      font-size:14px;
+    }
+
+    .input, .select{
+      width:100%;
+      border:none;
+      outline:none;
+      border-radius:18px;
+      background:rgba(255,255,255,.08);
+      color:white;
+      padding:16px 18px;
+      font-size:16px;
+      border:1px solid rgba(255,255,255,.1);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+
+    .input::placeholder{
+      color:#93a1ba;
+    }
+
+    .btn-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      justify-content:center;
+      margin-top:20px;
+    }
+
+    .btn{
+      border:none;
+      outline:none;
+      cursor:pointer;
+      color:white;
+      font-weight:800;
+      padding:15px 24px;
+      border-radius:18px;
+      font-size:15px;
+      transition:.25s ease;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .btn:hover{
+      transform:translateY(-2px) scale(1.02);
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 12px 30px rgba(124,58,237,.28);
+    }
+
+    .btn-secondary{
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.1);
+    }
+
+    .players-wrap{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
+      gap:14px;
+    }
+
+    .text-list{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+      gap:14px;
+      max-height:55vh;
+      overflow:auto;
+      padding-left:4px;
+    }
+
+    .text-option{
+      text-align:right;
+      cursor:pointer;
+      padding:18px;
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.1);
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      transition:.25s ease;
+      color:#eef3fb;
+    }
+
+    .text-option:hover{
+      transform:translateY(-2px);
+      background:linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.06));
+      box-shadow:0 12px 30px rgba(0,0,0,.22);
+    }
+
+    .text-option.selected{
+      border-color:rgba(6,182,212,.5);
+      box-shadow:0 0 0 2px rgba(6,182,212,.2), 0 10px 30px rgba(6,182,212,.12);
+    }
+
+    /* Game Screen */
+    #gameScreen{
+      padding:20px;
+    }
+
+    .game-layout{
+      width:100%;
+      height:100%;
+      display:grid;
+      grid-template-columns: 320px 1fr 320px;
+      gap:18px;
+      align-items:stretch;
+    }
+
+    .sidebar, .hud, .center-stage{
+      border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      backdrop-filter: blur(20px);
+      border-radius:28px;
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.08);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .sidebar, .hud{
+      padding:22px;
+    }
+
+    .section-title{
+      font-size:14px;
+      color:var(--muted);
+      margin-bottom:10px;
+    }
+
+    .player-turn{
+      font-size:28px;
+      font-weight:900;
+      line-height:1.2;
+      margin-bottom:14px;
+      text-shadow:0 10px 25px rgba(0,0,0,.35);
+    }
+
+    .timer{
+      font-size:64px;
+      font-weight:900;
+      line-height:1;
+      letter-spacing:-2px;
+      margin:8px 0 18px;
+      color:#fff;
+      text-shadow:0 0 18px rgba(255,255,255,.15), 0 0 34px rgba(255,77,109,.14);
+    }
+
+    .lives{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .life{
+      width:52px;
+      height:52px;
+      border-radius:18px;
+      display:grid;
+      place-items:center;
+      font-size:26px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), transparent 38%),
+        linear-gradient(180deg, rgba(255,77,109,.35), rgba(255,77,109,.12));
+      border:1px solid rgba(255,77,109,.35);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.15),
+        0 8px 22px rgba(255,77,109,.20),
+        0 0 18px rgba(255,77,109,.12);
+    }
+
+    .life.dead{
+      filter:grayscale(1);
+      opacity:.25;
+      transform:scale(.92);
+    }
+
+    .center-stage{
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      padding:24px;
+    }
+
+    .typing-stage{
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:0;
+      perspective:1200px;
+    }
+
+    .text-board{
+      width:min(980px,100%);
+      min-height:340px;
+      border-radius:34px;
+      padding:34px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow:
+        0 25px 60px rgba(0,0,0,.35),
+        inset 0 1px 0 rgba(255,255,255,.12);
+      transform: rotateX(7deg);
+      position:relative;
+      overflow:auto;
+    }
+
+    .text-board::after{
+      content:"";
+      position:absolute;
+      inset:auto 8% -28px 8%;
+      height:30px;
+      background: radial-gradient(ellipse, rgba(0,0,0,.35), transparent 70%);
+      filter: blur(8px);
+      pointer-events:none;
+    }
+
+    .display-text{
+      font-size: clamp(28px, 2.3vw, 42px);
+      line-height:2;
+      letter-spacing:.3px;
+      word-break:break-word;
+      user-select:none;
+    }
+
+    .display-text span{
+      transition: color .08s ease, background .08s ease, transform .08s ease;
+      border-radius:10px;
+      padding:2px 1px;
+    }
+
+    .display-text span.correct{
+      color: var(--ok);
+      text-shadow:0 0 10px rgba(57,217,138,.18);
+    }
+
+    .display-text span.current{
+      background:rgba(255,255,255,.14);
+      box-shadow:0 0 0 1px rgba(255,255,255,.08);
+    }
+
+    .display-text span.wrong{
+      color:#fff;
+      background:rgba(255,77,109,.30);
+      box-shadow:0 0 0 1px rgba(255,77,109,.20);
+    }
+
+    .bottom-actions{
+      display:flex;
+      justify-content:center;
+      gap:14px;
+      padding-top:18px;
+    }
+
+    .score-list{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .score-item{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .mini{
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .winner{
+      font-size: clamp(26px, 4vw, 44px);
+      font-weight:900;
+      text-align:center;
+      margin-bottom:16px;
+      color:var(--gold);
+      text-shadow:0 0 24px rgba(255,209,102,.18);
+    }
+
+    .help-note{
+      text-align:center;
+      color:var(--muted);
+      margin-top:12px;
+      font-size:14px;
+    }
+
+    @media (max-width: 1180px){
+      .game-layout{
+        grid-template-columns: 1fr;
+        grid-template-rows:auto auto 1fr;
+      }
+      .sidebar, .hud{
+        min-height:auto;
+      }
+      .display-text{
+        font-size: clamp(24px, 2.8vw, 34px);
+      }
+    }
+
+    @media (max-width: 700px){
+      .panel-inner{ padding:20px; }
+      .hero-title{ letter-spacing:-1px; }
+      .text-board{ padding:20px; min-height:260px; }
+      .timer{ font-size:46px; }
+      .life{ width:44px; height:44px; font-size:22px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg3d"></canvas>
+  <div class="noise"></div>
+
+  <div id="app">
+    <!-- Screen 1 -->
+    <section id="screen1" class="screen active">
+      <div class="panel">
+        <div class="panel-inner">
+          <h1 class="hero-title">FINAL SENTENCE</h1>
+          <div class="subtitle">نسخه مفهومی فارسی با ظاهر لیکویید گلس و حس سه‌بعدی نرم</div>
+
+          <div class="grid grid-2">
+            <div class="card">
+              <label class="label">تعداد بازیکنان</label>
+              <select id="playerCount" class="select">
+                <option value="2">2 بازیکن</option>
+                <option value="3">3 بازیکن</option>
+                <option value="4">4 بازیکن</option>
+                <option value="5">5 بازیکن</option>
+                <option value="6">6 بازیکن</option>
+              </select>
+            </div>
+
+            <div class="card">
+              <label class="label">زمان هر نوبت</label>
+              <select id="turnTime" class="select">
+                <option value="45">45 ثانیه</option>
+                <option value="60" selected>60 ثانیه</option>
+                <option value="75">75 ثانیه</option>
+                <option value="90">90 ثانیه</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" id="toNames">مرحله بعد</button>
+          </div>
+          <div class="help-note">اول تعداد نفرات و زمان هر نوبت را انتخاب کن</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 2 -->
+    <section id="screen2" class="screen">
+      <div class="panel">
+        <div class="panel-inner">
+          <h2 class="hero-title" style="font-size:clamp(30px,5vw,58px)">نام بازیکنان</h2>
+          <div class="subtitle">اسم هر بازیکن را وارد کن تا وارد انتخاب متن شویم</div>
+
+          <div id="playersContainer" class="players-wrap"></div>
+
+          <div class="btn-row">
+            <button class="btn btn-secondary" id="backTo1">بازگشت</button>
+            <button class="btn btn-primary" id="toTexts">ادامه</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 3 -->
+    <section id="screen3" class="screen">
+      <div class="panel">
+        <div class="panel-inner">
+          <h2 class="hero-title" style="font-size:clamp(30px,5vw,58px)">انتخاب متن</h2>
+          <div class="subtitle">یکی از ۲۶ متن سخت را برای رقابت انتخاب کن</div>
+
+          <div id="textList" class="text-list"></div>
+
+          <div class="btn-row">
+            <button class="btn btn-secondary" id="backTo2">بازگشت</button>
+            <button class="btn btn-primary" id="startGameBtn">شروع بازی</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 4 Game -->
+    <section id="gameScreen" class="screen">
+      <div class="game-layout">
+        <aside class="sidebar">
+          <div class="section-title">نوبت فعلی</div>
+          <div id="turnPlayer" class="player-turn">بازیکن 1</div>
+
+          <div class="section-title">جون ها</div>
+          <div id="livesBox" class="lives"></div>
+
+          <div class="section-title" style="margin-top:18px">وضعیت</div>
+          <div class="score-item">
+            <span>خطاها</span>
+            <strong id="errorsCount">0</strong>
+          </div>
+          <div class="score-item">
+            <span>پیشرفت</span>
+            <strong id="progressText">0%</strong>
+          </div>
+          <div class="score-item">
+            <span>زمان ثبت شده</span>
+            <strong id="liveTime">-</strong>
+          </div>
+        </aside>
+
+        <main class="center-stage">
+          <div class="typing-stage">
+            <div class="text-board">
+              <div id="displayText" class="display-text"></div>
+            </div>
+          </div>
+
+          <div class="bottom-actions">
+            <button class="btn btn-secondary" id="focusBtn">فعال کردن تایپ</button>
+            <button class="btn btn-primary" id="nextTurnBtn" style="display:none">نفر بعد</button>
+          </div>
+        </main>
+
+        <aside class="hud">
+          <div class="section-title">زمان باقی مانده</div>
+          <div id="timerEl" class="timer">60</div>
+
+          <div class="section-title">نتایج بازیکنان</div>
+          <div id="scoreList" class="score-list"></div>
+
+          <div class="help-note" style="text-align:right;margin-top:18px">
+            برای تایپ نیازی به کادر ورودی نیست. فقط کیبورد بزن.  
+            کاراکترها مستقیم روی همان متن بررسی می‌شوند.
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Screen 5 Result -->
+    <section id="screen5" class="screen">
+      <div class="panel">
+        <div class="panel-inner">
+          <div class="winner" id="winnerText">برنده مشخص شد</div>
+          <div id="finalBoard" class="score-list"></div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="location.reload()">شروع دوباره</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // -------------------------------
+    // 3D Background
+    // -------------------------------
+    const canvas = document.getElementById('bg3d');
+    const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(65, window.innerWidth/window.innerHeight, .1, 100);
+    camera.position.set(0, 0.8, 8);
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+    const ambient = new THREE.AmbientLight(0x99aaff, 0.45);
+    scene.add(ambient);
+
+    const p1 = new THREE.PointLight(0x7c3aed, 2.2, 30);
+    p1.position.set(-4, 3, 4);
+    scene.add(p1);
+
+    const p2 = new THREE.PointLight(0x06b6d4, 1.8, 30);
+    p2.position.set(4, -1, 4);
+    scene.add(p2);
+
+    const floorGeo = new THREE.PlaneGeometry(30, 30, 20, 20);
+    const floorMat = new THREE.MeshStandardMaterial({
+      color:0x0f1526,
+      metalness:.45,
+      roughness:.32
+    });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI/2;
+    floor.position.y = -2.8;
+    scene.add(floor);
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    for(let i=0;i<26;i++){
+      const g = new THREE.BoxGeometry(
+        0.5 + Math.random()*1.2,
+        0.5 + Math.random()*3.2,
+        0.5 + Math.random()*1.2
+      );
+      const m = new THREE.MeshStandardMaterial({
+        color: i % 2 ? 0x7c3aed : 0x06b6d4,
+        transparent:true,
+        opacity:.16,
+        metalness:.7,
+        roughness:.15
+      });
+      const cube = new THREE.Mesh(g,m);
+      cube.position.set(
+        (Math.random()-.5)*14,
+        -1.5 + Math.random()*5,
+        (Math.random()-.5)*10
+      );
+      cube.rotation.set(Math.random()*2, Math.random()*2, Math.random()*2);
+      group.add(cube);
+    }
+
+    function animate3D(){
+      requestAnimationFrame(animate3D);
+      const t = performance.now() * 0.001;
+      group.rotation.y = t * 0.12;
+      p1.position.x = Math.sin(t * 1.2) * 5;
+      p2.position.y = Math.cos(t * 1.5) * 2;
+      camera.position.x = Math.sin(t * 0.45) * 0.35;
+      camera.lookAt(0,0,0);
+      renderer.render(scene, camera);
+    }
+    animate3D();
+
+    window.addEventListener('resize', ()=>{
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // -------------------------------
+    // Sounds
+    // -------------------------------
+    let audioCtx;
+    function ensureAudio(){
+      if(!audioCtx){
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function beep({freq=700, dur=0.04, type='triangle', vol=0.03, sweep=0} = {}){
+      ensureAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      if(sweep){
+        osc.frequency.linearRampToValueAtTime(freq + sweep, audioCtx.currentTime + dur);
+      }
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur);
+    }
+
+    function playTypeSound(){
+      beep({freq: 540 + Math.random()*160, dur: 0.03, type:'triangle', vol:0.02, sweep:30});
+    }
+
+    function playWrongSound(){
+      beep({freq: 160, dur: 0.18, type:'sawtooth', vol:0.05, sweep:-60});
+      setTimeout(()=>beep({freq: 120, dur:0.2, type:'square', vol:0.03}), 30);
+    }
+
+    function playSuccessSound(){
+      beep({freq: 620, dur: 0.08, type:'triangle', vol:0.03});
+      setTimeout(()=>beep({freq: 860, dur:0.08, type:'triangle', vol:0.03}), 70);
+      setTimeout(()=>beep({freq: 1020, dur:0.12, type:'triangle', vol:0.035}), 140);
+    }
+
+    function playTurnStart(){
+      beep({freq: 400, dur:0.08, type:'sine', vol:0.03});
+      setTimeout(()=>beep({freq: 560, dur:0.09, type:'sine', vol:0.03}), 90);
+    }
+
+    // -------------------------------
+    // Data
+    // -------------------------------
+    const texts = [
+      "در میان سکوت عمیق شب تنها صدای نفس های آرام انسان است که در تاریکی شنیده میشود.",
+      "برنامه نویسی حرفه ای نیازمند دقت استمرار نظم ذهنی و توانایی حل مسئله در شرایط دشوار است.",
+      "هر انسانی در لحظه هایی از زندگی با انتخاب هایی روبه رو میشود که مسیر آینده او را تعیین میکند.",
+      "در جهانی که سرعت تغییرات بسیار زیاد شده یادگیری مداوم مهمترین ابزار بقا و پیشرفت است.",
+      "گاهی آرامش واقعی زمانی به دست می آید که انسان دست از کنترل همه چیز بردارد و فقط ادامه دهد.",
+      "دانش زمانی ارزشمند میشود که بتواند در عمل به بهبود زندگی انسان ها و جامعه کمک کند.",
+      "موفقیت پایدار معمولا نتیجه تصمیم های کوچک درست است که هر روز با نظم تکرار شده اند.",
+      "فناوری های نوین مرز میان تخیل و واقعیت را باریک کرده اند و جهان را به شدت دگرگون ساخته اند.",
+      "کسی که بتواند در فشار زیاد ذهن خود را آرام نگه دارد شانس بیشتری برای پیروزی خواهد داشت.",
+      "سفر در جاده های طولانی گاهی فرصتی برای دیدن درون خود انسان و بازشناسی رویاهای فراموش شده است.",
+      "حفظ تمرکز در محیطی پر از حواس پرتی یکی از مهمترین مهارت های عصر دیجیتال محسوب میشود.",
+      "وقتی انسان هدفی روشن داشته باشد حتی سخت ترین موانع نیز میتوانند به پله های رشد تبدیل شوند.",
+      "درک عمیق از ساختار زبان میتواند مهارت نوشتن خواندن و انتقال مفاهیم را متحول کند.",
+      "گاهی یک تصمیم کوچک در لحظه ای کوتاه میتواند نتیجه ای بزرگ و ماندگار در آینده به وجود آورد.",
+      "هنر واقعی فقط نمایش زیبایی نیست بلکه راهی برای انتقال احساسات پنهان و تجربه های عمیق انسانی است.",
+      "ذهن آموزش دیده میتواند حتی در شرایط ترس و فشار بالا نیز مسیر درست را سریع تر تشخیص دهد.",
+      "انسان هایی که خوب گوش میدهند اغلب بهتر از دیگران جهان را میفهمند و عمیق تر ارتباط برقرار میکنند.",
+      "یادگیری مهارتی جدید در ابتدا کند و دشوار به نظر میرسد اما تکرار آن را به توانایی تبدیل میکند.",
+      "تحلیل دقیق داده ها میتواند الگوهایی را آشکار کند که با نگاه سطحی هرگز دیده نمیشوند.",
+      "در رقابت های واقعی فقط سرعت مهم نیست بلکه کنترل هیجان و کیفیت اجرا نیز نقش تعیین کننده دارد.",
+      "اگر انسان بتواند ترس خود را مدیریت کند بخش بزرگی از محدودیت های ذهنی او از بین خواهد رفت.",
+      "ساختن آینده ای بهتر نیازمند مسئولیت پذیری فردی همکاری جمعی و امیدی پایدار به تغییر است.",
+      "در بسیاری از مواقع شکست پایان مسیر نیست بلکه شروع فهم عمیق تری از توانایی های واقعی انسان است.",
+      "پایداری در مسیرهای دشوار بیشتر از استعداد خام میتواند سرنوشت افراد را به سمت موفقیت ببرد.",
+      "هرچه فهم انسان از جهان پیچیده تر شود نیاز او به تفکر انتقادی و تردید هوشمندانه بیشتر میشود.",
+      "در نهایت این تصمیم های روزانه هستند که شخصیت انسان را میسازند و آینده او را شکل میدهند."
+    ];
+
+    const screens = {
+      s1: document.getElementById('screen1'),
+      s2: document.getElementById('screen2'),
+      s3: document.getElementById('screen3'),
+      game: document.getElementById('gameScreen'),
+      s5: document.getElementById('screen5'),
+    };
+
+    const playerCountEl = document.getElementById('playerCount');
+    const turnTimeEl = document.getElementById('turnTime');
+    const playersContainer = document.getElementById('playersContainer');
+    const textList = document.getElementById('textList');
+
+    let state = {
+      players: [],
+      selectedText: '',
+      currentPlayerIndex: 0,
+      turnTime: 60,
+      remaining: 60,
+      timer: null,
+      lives: 4,
+      maxLives: 4,
+      errors: 0,
+      typedIndex: 0,
+      startedAt: 0,
+      active: false,
+      finishedPlayers: 0
+    };
+
+    function showScreen(key){
+      Object.values(screens).forEach(el => el.classList.remove('active'));
+      screens[key].classList.add('active');
+    }
+
+    // -------------------------------
+    // Screen 1 -> 2
+    // -------------------------------
+    document.getElementById('toNames').addEventListener('click', ()=>{
+      ensureAudio();
+      state.turnTime = Number(turnTimeEl.value);
+      renderPlayerInputs(Number(playerCountEl.value));
+      showScreen('s2');
+    });
+
+    document.getElementById('backTo1').addEventListener('click', ()=> showScreen('s1'));
+
+    function renderPlayerInputs(count){
+      playersContainer.innerHTML = '';
+      for(let i=0;i<count;i++){
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <label class="label">نام بازیکن ${i+1}</label>
+          <input class="input player-name" placeholder="مثلا آرش یا سارا" value="بازیکن ${i+1}">
+        `;
+        playersContainer.appendChild(card);
+      }
+    }
+
+    // -------------------------------
+    // Screen 2 -> 3
+    // -------------------------------
+    document.getElementById('toTexts').addEventListener('click', ()=>{
+      const names = [...document.querySelectorAll('.player-name')].map((el, i) => ({
+        name: el.value.trim() || `بازیکن ${i+1}`,
+        time: null,
+        completed: false,
+        failed: false
+      }));
+
+      state.players = names;
+      renderTextOptions();
+      showScreen('s3');
+    });
+
+    document.getElementById('backTo2').addEventListener('click', ()=> showScreen('s2'));
+
+    function renderTextOptions(){
+      textList.innerHTML = '';
+      texts.forEach((text, i)=>{
+        const item = document.createElement('button');
+        item.className = 'text-option';
+        item.innerHTML = `
+          <strong style="display:block;margin-bottom:8px">متن ${i+1}</strong>
+          <span style="color:#cbd5e1">${text.slice(0, 95)}...</span>
+        `;
+        item.addEventListener('click', ()=>{
+          [...document.querySelectorAll('.text-option')].forEach(x=>x.classList.remove('selected'));
+          item.classList.add('selected');
+          state.selectedText = text;
+        });
+        textList.appendChild(item);
+      });
+    }
+
+    // -------------------------------
+    // Start Game
+    // -------------------------------
+    document.getElementById('startGameBtn').addEventListener('click', ()=>{
+      if(!state.selectedText){
+        alert('اول یک متن انتخاب کن');
+        return;
+      }
+      state.currentPlayerIndex = 0;
+      state.finishedPlayers = 0;
+      state.players = state.players.map(p => ({...p, time:null, completed:false, failed:false}));
+      showScreen('game');
+      renderScoreList();
+      startTurn();
+    });
+
+    // -------------------------------
+    // Game refs
+    // -------------------------------
+    const turnPlayer = document.getElementById('turnPlayer');
+    const livesBox = document.getElementById('livesBox');
+    const errorsCount = document.getElementById('errorsCount');
+    const progressText = document.getElementById('progressText');
+    const liveTime = document.getElementById('liveTime');
+    const timerEl = document.getElementById('timerEl');
+    const displayText = document.getElementById('displayText');
+    const scoreList = document.getElementById('scoreList');
+    const nextTurnBtn = document.getElementById('nextTurnBtn');
+    const focusBtn = document.getElementById('focusBtn');
+
+    focusBtn.addEventListener('click', ()=>{
+      ensureAudio();
+      state.active = true;
+    });
+
+    document.addEventListener('click', ()=>{
+      if(screens.game.classList.contains('active')) state.active = true;
+    });
+
+    function renderLives(){
+      livesBox.innerHTML = '';
+      for(let i=0;i<state.maxLives;i++){
+        const d = document.createElement('div');
+        d.className = 'life' + (i >= state.lives ? ' dead' : '');
+        d.textContent = '✦';
+        livesBox.appendChild(d);
+      }
+    }
+
+    function renderScoreList(){
+      scoreList.innerHTML = '';
+      state.players.forEach((p, i)=>{
+        const row = document.createElement('div');
+        row.className = 'score-item';
+        row.innerHTML = `
+          <span>${i+1}. ${p.name}</span>
+          <strong>${p.time == null ? '-' : (p.failed ? 'حذف شد' : p.time.toFixed(2)+' ثانیه')}</strong>
+        `;
+        scoreList.appendChild(row);
+      });
+    }
+
+    function renderTypingText(){
+      displayText.innerHTML = '';
+      [...state.selectedText].forEach((ch, index)=>{
+        const span = document.createElement('span');
+        span.textContent = ch;
+        if(index < state.typedIndex){
+          span.classList.add('correct');
+        }else if(index === state.typedIndex){
+          span.classList.add('current');
+        }
+        displayText.appendChild(span);
+      });
+    }
+
+    function startTurn(){
+      clearInterval(state.timer);
+      state.lives = state.maxLives;
+      state.errors = 0;
+      state.typedIndex = 0;
+      state.remaining = state.turnTime;
+      state.startedAt = performance.now();
+      state.active = true;
+      nextTurnBtn.style.display = 'none';
+
+      turnPlayer.textContent = `نوبت ${state.players[state.currentPlayerIndex].name}`;
+      timerEl.textContent = state.remaining;
+      errorsCount.textContent = '0';
+      progressText.textContent = '0%';
+      liveTime.textContent = '-';
+
+      renderLives();
+      renderTypingText();
+      renderScoreList();
+      playTurnStart();
+
+      state.timer = setInterval(()=>{
+        state.remaining--;
+        timerEl.textContent = state.remaining;
+        if(state.remaining <= 0){
+          finishTurn(true);
+        }
+      }, 1000);
+    }
+
+    function finishTurn(failed){
+      clearInterval(state.timer);
+      state.active = false;
+      const elapsed = (performance.now() - state.startedAt) / 1000;
+      const player = state.players[state.currentPlayerIndex];
+
+      if(failed){
+        player.failed = true;
+        player.time = 9999;
+      }else{
+        player.completed = true;
+        player.time = elapsed;
+      }
+
+      renderScoreList();
+      liveTime.textContent = failed ? 'ناموفق' : elapsed.toFixed(2) + 's';
+      nextTurnBtn.style.display = 'inline-block';
+
+      if(!failed) playSuccessSound();
+    }
+
+    nextTurnBtn.addEventListener('click', ()=>{
+      state.currentPlayerIndex++;
+      if(state.currentPlayerIndex >= state.players.length){
+        showResults();
+      }else{
+        startTurn();
+      }
+    });
+
+    function showResults(){
+      const sorted = [...state.players].sort((a,b)=>a.time-b.time);
+      const winner = sorted[0];
+      document.getElementById('winnerText').textContent =
+        winner.failed ? 'همه حذف شدند یا کامل نکردند' : `برنده: ${winner.name}`;
+
+      const finalBoard = document.getElementById('finalBoard');
+      finalBoard.innerHTML = '';
+      sorted.forEach((p, i)=>{
+        const row = document.createElement('div');
+        row.className = 'score-item';
+        row.innerHTML = `
+          <span>${i+1}. ${p.name}</span>
+          <strong>${p.failed ? 'حذف شد' : p.time.toFixed(2)+' ثانیه'}</strong>
+        `;
+        finalBoard.appendChild(row);
+      });
+
+      showScreen('s5');
+    }
+
+    // -------------------------------
+    // Direct typing on same text
+    // -------------------------------
+    document.addEventListener('keydown', (e)=>{
+      if(!screens.game.classList.contains('active')) return;
+      if(!state.active) return;
+
+      // ignore control keys
+      const ignored = ['Shift','Alt','Control','Meta','Tab','CapsLock','Escape','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'];
+      if(ignored.includes(e.key)) return;
+
+      e.preventDefault();
+
+      if(e.key === 'Backspace'){
+        return;
+      }
+
+      const expected = state.selectedText[state.typedIndex];
+      if(!expected) return;
+
+      const typed = e.key;
+
+      const spans = displayText.querySelectorAll('span');
+
+      if(typed === expected){
+        playTypeSound();
+        if(spans[state.typedIndex]){
+          spans[state.typedIndex].classList.remove('current','wrong');
+          spans[state.typedIndex].classList.add('correct');
+        }
+        state.typedIndex++;
+
+        if(spans[state.typedIndex]){
+          spans[state.typedIndex].classList.add('current');
+          spans[state.typedIndex].scrollIntoView({block:'nearest', inline:'nearest', behavior:'smooth'});
+        }
+
+        const progress = Math.floor((state.typedIndex / state.selectedText.length) * 100);
+        progressText.textContent = progress + '%';
+
+        const elapsed = (performance.now() - state.startedAt) / 1000;
+        liveTime.textContent = elapsed.toFixed(2) + 's';
+
+        if(state.typedIndex >= state.selectedText.length){
+          finishTurn(false);
+        }
+      }else{
+        playWrongSound();
+        state.errors++;
+        errorsCount.textContent = state.errors;
+        state.lives--;
+        renderLives();
+
+        if(spans[state.typedIndex]){
+          spans[state.typedIndex].classList.add('wrong');
+          setTimeout(()=>{
+            if(spans[state.typedIndex]) spans[state.typedIndex].classList.remove('wrong');
+          }, 180);
+        }
+
+        if(state.lives <= 0){
+          finishTurn(true);
+        }
+      }
+    });
+
+    // Init
+    renderPlayerInputs(Number(playerCountEl.value));
+  </script>
+</body>
+</html>
